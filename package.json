@@ -1,0 +1,24 @@
+{
+  "name": "@uncaught/gpio-shutter-bridge",
+  "version": "1.1.0",
+  "description": "A GPIO shutter bridge for e.g. the Velux KLF150",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "private": true,
+  "dependencies": {
+    "mqtt": "^5.14.1",
+    "onoff": "^6.0.3"
+  },
+  "devDependencies": {
+    "@tsconfig/node20": "^20.1.6",
+    "@types/lodash.debounce": "^4.0.9",
+    "@types/node": "^20",
+    "typescript": "^5.9.3"
+  },
+  "sideEffects": [
+    "./example.ts"
+  ]
+}

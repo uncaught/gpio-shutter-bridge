@@ -1,0 +1,6 @@
+*.js text eol=lf
+*.mjs text eol=lf
+*.ts text eol=lf
+*.json text eol=lf
+*.gitattributes text eol=lf
+*.gitignore text eol=lf
