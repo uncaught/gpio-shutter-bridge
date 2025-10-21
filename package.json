@@ -19,7 +19,6 @@
     "build": "tsc",
     "prepublishOnly": "npm run build"
   },
-  "private": true,
   "dependencies": {
     "lodash.debounce": "^4.0.8",
     "mqtt": "^5.14.1",
@@ -46,5 +45,8 @@
   "files": [
     "dist",
     "README.md"
-  ]
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
 }
