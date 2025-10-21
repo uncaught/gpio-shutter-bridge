@@ -1,12 +1,23 @@
 {
   "name": "@uncaught/gpio-shutter-bridge",
-  "version": "1.2.0",
-  "description": "A GPIO shutter bridge for e.g. the Velux KLF150",
+  "author": "uncaught <uncaught42@gmail.com>",
+  "license": "MIT",
+  "version": "1.0.0",
+  "description": "MQTT shutter bridge for home assistant with Velux KLF 150 support",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/uncaught/gpio-shutter-bridge.git"
+  },
+  "bugs": {
+    "url": "https://github.com/uncaught/gpio-shutter-bridge/issues"
+  },
+  "homepage": "https://github.com/uncaught/gpio-shutter-bridge#readme",
   "type": "module",
-  "exports": "./dist/index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "prepublishOnly": "npm run build"
   },
   "private": true,
   "dependencies": {
@@ -22,5 +33,18 @@
   },
   "sideEffects": [
     "./example.ts"
+  ],
+  "keywords": [
+    "mqtt",
+    "home-assistant",
+    "velux",
+    "klf150",
+    "shutter",
+    "gpio",
+    "raspberry-pi"
+  ],
+  "files": [
+    "dist",
+    "README.md"
   ]
 }

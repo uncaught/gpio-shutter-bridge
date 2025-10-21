@@ -5,6 +5,7 @@
     "noFallthroughCasesInSwitch": false,
     "noImplicitAny": true,
     "noUncheckedIndexedAccess": true,
-    "outDir": "dist"
+    "outDir": "dist",
+    "declaration": true
   }
 }

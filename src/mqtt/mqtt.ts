@@ -83,7 +83,7 @@ export function initMqtt(
       },
       origin: {
         name: ns0,
-        sw_version: '1.2.0',
+        sw_version: '1.0.0',
         support_url: 'https://github.com/uncaught/gpio-shutter-bridge',
       },
       payload_available: 'online',
