@@ -20,9 +20,9 @@ export interface ShutterInterface {
 
   open(): void;
 
-  close(): void;
-
   stop(): void;
+
+  close(): void;
 }
 
 export interface ShutterInterfaceWithState extends ShutterInterface {
@@ -31,6 +31,18 @@ export interface ShutterInterfaceWithState extends ShutterInterface {
   onStateChange(cb: (state: ShutterState) => void): () => void;
 }
 
+export interface ShutterInterfaceWithPosition extends ShutterInterface {
+  getPosition(): number;
+
+  setPosition(position: number): void;
+
+  onPositionChange(cb: (position: number) => void): () => void;
+}
+
 export function isShutterWithState(shutter: ShutterInterface): shutter is ShutterInterfaceWithState {
   return 'getState' in shutter && 'onStateChange' in shutter;
+}
+
+export function isShutterWithPosition(shutter: ShutterInterface): shutter is ShutterInterfaceWithPosition {
+  return 'getPosition' in shutter && 'setPosition' in shutter && 'onPositionChange' in shutter;
 }

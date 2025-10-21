@@ -21,11 +21,7 @@ export function mkOutput(pin: number, onDispose: OnDispose): Gpio {
   return gpio;
 }
 
-export function mkInput(pin: number | null | undefined, onDispose: OnDispose): Gpio | null {
-  if (typeof pin !== 'number' || pin < 0) {
-    return null;
-  }
-
+export function mkInput(pin: number, onDispose: OnDispose): Gpio{
   //Setting to pull-up - the `onoff`-library doesn't do that.
   // I'm doing this because the inputs were floating high without any pull, so I just stick with it.
   // We assume the input pin is closed to ground, causing it to change to low.

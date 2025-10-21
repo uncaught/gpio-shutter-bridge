@@ -16,12 +16,12 @@ export class ThreeButtonShutter implements ShutterInterface {
     press(this.openButton);
   }
 
-  close(): void {
-    press(this.closeButton);
-  }
-
   stop(): void {
     press(this.stopButton);
+  }
+
+  close(): void {
+    press(this.closeButton);
   }
 }
 

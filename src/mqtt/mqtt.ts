@@ -1,5 +1,5 @@
-import mqtt from 'mqtt';
-import {ShutterState, ShutterInterface, isShutterWithState} from '../Shutter/Shutter.js';
+import mqtt, {IClientPublishOptions} from 'mqtt';
+import {ShutterState, ShutterInterface, isShutterWithState, isShutterWithPosition} from '../Shutter/Shutter.js';
 import {MqttDeviceDiscoveryPayload, MqttCoverConfig} from './interfaces.js';
 
 // @see https://www.home-assistant.io/integrations/mqtt
@@ -33,10 +33,10 @@ export function initMqtt(
     rejectUnauthorized: false, // self-signed certificate
   });
 
-  client.on('connect', () => {
-    console.log('MQTT connected');
-    client.subscribe(`${fullNs}/+/set`);
-  });
+  const publish = (topic: string, message: string | Buffer, opts?: IClientPublishOptions): void => {
+    console.log('MQTT publish', topic, message, opts);
+    client.publish(topic, message, opts);
+  };
 
   client.on('error', (err) => {
     console.error(err);
@@ -55,84 +55,109 @@ export function initMqtt(
         return;
       }
 
-      if (payload === 'open') {
-        shutter.open();
-      } else if (payload === 'close') {
-        shutter.close();
-      } else if (payload === 'stop') {
-        shutter.stop();
+      const subTopic = parts[3];
+      if (subTopic === 'set') {
+        if (payload === 'open') {
+          shutter.open();
+        } else if (payload === 'close') {
+          shutter.close();
+        } else if (payload === 'stop') {
+          shutter.stop();
+        }
+      } else if (subTopic === 'set-position' && isShutterWithPosition(shutter)) {
+        shutter.setPosition(parseInt(payload));
       }
     }
   });
 
-  const autoDiscoveryPayload: MqttDeviceDiscoveryPayload = {
-    availability_topic: deviceAvailabilityTopic,
-    components: {},
-    device: {
-      identifiers: deviceId,
-      name: 'GPIO Shutter Bridge',
-      manufacturer: 'uncaught',
-      model: 'GPIO Shutter',
-    },
-    origin: {
-      name: ns0,
-      sw_version: '1.1.0',
-      support_url: 'https://github.com/uncaught/gpio-shutter-bridge',
-    },
-    payload_available: 'online',
-    payload_not_available: 'offline',
-  };
+  client.on('connect', () => {
+    console.log('MQTT connected');
+    client.subscribe(`${fullNs}/+/set`);
+    client.subscribe(`${fullNs}/+/set-position`);
 
-  for (const shutter of shutters) {
-    validateNamespacePart(shutter.ident);
-
-    const shutterNs = `${fullNs}/${shutter.ident}`;
-
-    //Auto-discovery:
-    const objectId = `${deviceId}-${shutter.ident}`;
-    const autoDiscoveryComponent: MqttCoverConfig = {
-      command_topic: `${shutterNs}/set`,
-      device_class: 'shutter', //see https://www.home-assistant.io/integrations/cover/#device-class
-      name: `Shutter ${shutter.ident.replaceAll(/_/g, ' ')}`,
-      optimistic: true,
-      payload_close: 'close',
-      payload_open: 'open',
-      payload_stop: 'stop',
-      platform: 'cover',
-      unique_id: objectId,
+    const autoDiscoveryPayload: MqttDeviceDiscoveryPayload = {
+      availability_topic: deviceAvailabilityTopic,
+      components: {},
+      device: {
+        identifiers: deviceId,
+        name: 'GPIO Shutter Bridge',
+        manufacturer: 'uncaught',
+        model: 'GPIO Shutter',
+      },
+      origin: {
+        name: ns0,
+        sw_version: '1.2.0',
+        support_url: 'https://github.com/uncaught/gpio-shutter-bridge',
+      },
+      payload_available: 'online',
+      payload_not_available: 'offline',
     };
-    autoDiscoveryPayload.components[objectId] = autoDiscoveryComponent;
 
-    if (isShutterWithState(shutter)) {
-      const publishState = (state: ShutterState) => {
-        if (state !== 'stopping' && state !== 'unknown') {
-          client.publish(`${shutterNs}/state`, {
-            'closed': 'closed',
-            'closing': 'closing',
-            'in-between': 'stopped',
-            'open': 'open',
-            'opening': 'opening',
-          }[state], {retain: true});
-        }
+    for (const shutter of shutters) {
+      validateNamespacePart(shutter.ident);
+
+      const shutterNs = `${fullNs}/${shutter.ident}`;
+
+      //Auto-discovery:
+      const objectId = `${deviceId}-${shutter.ident}`;
+      const autoDiscoveryComponent: MqttCoverConfig = {
+        command_topic: `${shutterNs}/set`,
+        device_class: 'shutter', //see https://www.home-assistant.io/integrations/cover/#device-class
+        name: `Shutter ${shutter.ident.replaceAll(/_/g, ' ')}`,
+        optimistic: true,
+        payload_close: 'close',
+        payload_open: 'open',
+        payload_stop: 'stop',
+        platform: 'cover',
+        unique_id: objectId,
       };
-      publishState(shutter.getState());
-      shutter.onStateChange(publishState);
+      autoDiscoveryPayload.components[objectId] = autoDiscoveryComponent;
 
-      autoDiscoveryComponent.optimistic = false;
-      autoDiscoveryComponent.state_closed = 'closed';
-      autoDiscoveryComponent.state_closing = 'closing';
-      autoDiscoveryComponent.state_open = 'open';
-      autoDiscoveryComponent.state_opening = 'opening';
-      autoDiscoveryComponent.state_stopped = 'stopped';
-      autoDiscoveryComponent.state_topic = `${shutterNs}/state`;
+      if (isShutterWithState(shutter)) {
+        const publishState = (state: ShutterState) => {
+          if (state !== 'stopping' && state !== 'unknown') {
+            publish(`${shutterNs}/state`, {
+              'closed': 'closed',
+              'closing': 'closing',
+              'in-between': 'stopped',
+              'open': 'open',
+              'opening': 'opening',
+            }[state], {retain: true});
+          }
+        };
+        publishState(shutter.getState());
+        shutter.onStateChange(publishState);
+
+        autoDiscoveryComponent.optimistic = false;
+        autoDiscoveryComponent.state_closed = 'closed';
+        autoDiscoveryComponent.state_closing = 'closing';
+        autoDiscoveryComponent.state_open = 'open';
+        autoDiscoveryComponent.state_opening = 'opening';
+        autoDiscoveryComponent.state_stopped = 'stopped';
+        autoDiscoveryComponent.state_topic = `${shutterNs}/state`;
+      }
+
+      if (isShutterWithPosition(shutter)) {
+        const publishPosition = (position: number) => {
+          publish(`${shutterNs}/position`, position.toString(), {retain: true});
+        };
+        publishPosition(shutter.getPosition());
+        shutter.onPositionChange(publishPosition);
+
+        autoDiscoveryComponent.optimistic = false;
+        autoDiscoveryComponent.position_open = 100;
+        autoDiscoveryComponent.position_closed = 0;
+        autoDiscoveryComponent.position_topic = `${shutterNs}/position`;
+        autoDiscoveryComponent.set_position_topic = `${shutterNs}/set-position`;
+      }
     }
-  }
 
-  client.publish(`homeassistant/device/${deviceId}/config`, JSON.stringify(autoDiscoveryPayload), {retain: true});
-  client.publish(deviceAvailabilityTopic, 'online', {retain: true});
+    publish(`homeassistant/device/${deviceId}/config`, JSON.stringify(autoDiscoveryPayload), {retain: true});
+    publish(deviceAvailabilityTopic, 'online', {retain: true});
+  });
 
   return async () => {
-    client.publish(deviceAvailabilityTopic, 'offline', {retain: true});
+    publish(deviceAvailabilityTopic, 'offline', {retain: true});
     await client.endAsync();
   };
 }
