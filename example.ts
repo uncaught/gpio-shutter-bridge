@@ -9,7 +9,7 @@ const veluxKlf150: VeluxConfig[] = [
   {ident: 'Velux_B', up: 4, down: 17, input: 15},
   {ident: 'Velux_C', up: 27, down: 22, input: 18},
   {ident: 'Velux_D', up: 10, down: 9, input: 23},
-  {ident: 'Velux_E', up: 11, down: 8, input: 24}, //same column!
+  {ident: 'Velux_E', up: 11, down: 8, input: 24}, //same row!
 ];
 
 /**

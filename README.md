@@ -70,7 +70,7 @@ Just to give you an insight, you can pobably use this project with any other har
 ![Relay boards](docs/relay-boards.png)
 
 - Connect all **VCC** pins of the relays to a 3V GPIO pin of the Raspberry Pi.
-  - I have daisy chained them together. Only the most left relay is connected to the PI.
+  - I have daisy chained them together. Only the most left relay is connected to the Pi.
 - Connect all **GND** pins of the relays to a GND pin of the Raspberry Pi.
   - Again daisy chained.
 - Connect each **IN** pin of the relays to one GPIO pin of the Raspberry Pi.
@@ -91,7 +91,7 @@ This is for the default configuration as described in the Velux KLF 150 manual. 
 ### Inputs
 
 - The bottom line of all input pins are for GND. However, since the cabling comes in pairs anyway and you need to connect them each to one of the relays, I just used all the existing cables.
-- So connect all 10 inputs to the 10 relays, the top one to **NO** (normally open) and the bottom one to **COM** (common/GND). 
+- So connect all 10 inputs to the 10 relays, the top one to **NO** (normally open) and the bottom one to **COM** (common). 
 
 # Software
 
@@ -107,7 +107,7 @@ onDispose(initMqtt(createVeluxShutters([
   {ident: 'Velux_B', up: 4, down: 17, input: 15},
   {ident: 'Velux_C', up: 27, down: 22, input: 18},
   {ident: 'Velux_D', up: 10, down: 9, input: 23},
-  {ident: 'Velux_E', up: 11, down: 8, input: 24}, //same column!
+  {ident: 'Velux_E', up: 11, down: 8, input: 24}, //same row!
 ], onDispose), {url: 'mqtt://your-mqtt-or-home-assistant'}));
 ```
 
