@@ -3,6 +3,7 @@
   "version": "1.2.0",
   "description": "A GPIO shutter bridge for e.g. the Velux KLF150",
   "type": "module",
+  "exports": "./dist/index.js",
   "scripts": {
     "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"

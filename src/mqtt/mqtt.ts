@@ -1,4 +1,4 @@
-import mqtt, {IClientPublishOptions} from 'mqtt';
+import mqtt, {type IClientPublishOptions, type IClientOptions} from 'mqtt';
 import {ShutterState, ShutterInterface, isShutterWithState, isShutterWithPosition} from '../Shutter/Shutter.js';
 import {MqttDeviceDiscoveryPayload, MqttCoverConfig} from './interfaces.js';
 
@@ -16,7 +16,7 @@ function validateNamespacePart(str: string) {
 
 export function initMqtt(
   shutters: readonly ShutterInterface[],
-  {url}: { url: string },
+  {url, ...mqttOpts}: { url: string } & IClientOptions,
   namespace: string = 'shutter', //must be unique if you have multiple instances of this program running
 ): () => Promise<void> {
   const shuttersById = new Map<string, ShutterInterface>(shutters.map((s) => [s.ident, s]));
@@ -28,10 +28,7 @@ export function initMqtt(
   const deviceId = `${ns0}-${ns1}`;
   const deviceAvailabilityTopic = `${fullNs}/-/availability`;
 
-  const client = mqtt.connect(url, {
-    clientId: fullNs,
-    rejectUnauthorized: false, // self-signed certificate
-  });
+  const client = mqtt.connect(url, {...mqttOpts, clientId: fullNs});
 
   const publish = (topic: string, message: string | Buffer, opts?: IClientPublishOptions): void => {
     console.log('MQTT publish', topic, message, opts);

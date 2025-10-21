@@ -1,7 +1,4 @@
-import {createVeluxShutters, VeluxConfig} from './src/Shutter/VeluxShutterFactory.js';
-import {initRuntime} from './src/runtime.js';
-import {initMqtt} from './src/mqtt/mqtt.js';
-import {createThreeButtonShutter} from './src/Shutter/ThreeButtonShutter.js';
+import {createVeluxShutters, VeluxConfig, initRuntime, initMqtt, createThreeButtonShutter} from './src/index.js';
 
 /**
  * This is an example for connecting to a Velux KLF150 with up to 5 shutters.
@@ -38,4 +35,4 @@ const shutters = [
   createThreeButtonShutter('Balkon', 10, 9, 11, onDispose),
 ];
 
-onDispose(initMqtt(shutters, {url: 'mqtts://mosquitto.local.correnz.net'}));
+onDispose(initMqtt(shutters, {url: 'mqtts://mosquitto.local.correnz.net', rejectUnauthorized: false}));

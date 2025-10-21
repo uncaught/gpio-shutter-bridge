@@ -1,6 +1,6 @@
 export type OnDispose = (disposable: () => void | Promise<void>) => () => void;
 
-export function initRuntime(): { onDispose: OnDispose } {
+export function initRuntime(): { exit: (err?: Error | unknown) => Promise<void>; onDispose: OnDispose } {
   const disposables = new Set<() => void | Promise<void>>();
 
   const onDispose: OnDispose = (cb) => {
@@ -29,5 +29,5 @@ export function initRuntime(): { onDispose: OnDispose } {
   process.on('uncaughtException', (err) => exit(err));
   process.on('unhandledRejection', (err) => exit(err));
 
-  return {onDispose};
+  return {exit, onDispose};
 }
