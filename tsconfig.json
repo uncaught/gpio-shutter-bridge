@@ -7,5 +7,6 @@
     "noUncheckedIndexedAccess": true,
     "outDir": "dist",
     "declaration": true
-  }
+  },
+  "exclude": ["./example.ts"]
 }
