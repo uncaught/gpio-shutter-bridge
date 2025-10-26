@@ -95,17 +95,21 @@ This is for the default configuration as described in the Velux KLF 150 manual. 
 
 # Software
 
-- Make sure you have either `raspi-gpio` or `pinctrl` (newer) installed. Check with `raspi-gpio get` or `pinctrl get`.
+- You will need to have `node` installed.
+  - I have to use node 21, but it should work with newer versions as well.
+- Make sure you have either `raspi-gpio` or `pinctrl` (newer) available.
+  - Check with `raspi-gpio get` or `pinctrl get`.
   - Either one is used to set the GPIO input pins to the "pull up" mode. This is not handled in the `onoff`-library I'm using.
-  - `pinctrl` is newer, but requires permissions. So you either need to be root, or make sure you have access to all `/dev/gpio*` devices:
+  - `pinctrl` is newer, but requires permissions. 
+    - So you either need to be root, or make sure you have access to all `/dev/gpio*` devices.
     - E.g. use the `gpio` group:
       - Check `ll /dev/gpio*` and see that every device is owned by the `gpio` group and has `g+rw` permissions.
       - If not, use `sudo chgrp gpio /dev/gpio*` and/or `sudo chmod g+rw /dev/gpio*`.
       - You can add yourself to the `gpio` group with `sudo usermod -a -G gpio $USER`.
       - Verify with `pinctrl get` that you can use the tool without further permissions.
-- Go into a folder where you wish to install this project.
+- Go into a folder where you wish to install this project (e.g. `~/shutter`).
 - Install the library with `npm install @uncaught/gpio-shutter-bridge`
-- Create a javascript file (e.g. `run.js`), require my library and call it with your shutter-pin-layout:
+- Create a javascript file (e.g. `run.mjs`), require my library and call it with your shutter-pin-layout:
 
 ```js
 import {createVeluxShutters, initRuntime, initMqtt} from '@uncaught/gpio-shutter-bridge';
@@ -123,6 +127,27 @@ initMqtt(createVeluxShutters([
 
 - The ident should match `/[a-zA-Z][a-zA-Z0-9_-]*/`.
 - See [my personal example](./example.ts) for a few more details.
+
+<details>
+<summary>Auto start with screen and crontab</summary>
+
+I'm using `screen` to keep the process running and to check in on its output.
+
+I created an additional `start.sh` file:
+
+```bash
+#!/usr/bin/env bash
+set -e
+selfDir=$(dirname $(readlink -f $0))
+cd $selfDir
+screen -dmS shutter node run.mjs
+```
+
+Then added `@reboot /home/nc/shutter/start.sh` to my `crontab -e`.
+
+If you are unfamiliar with `screen`, you can detach from a session with `ctrl+a+d` and reattach with `screen -r shutter`.
+
+</details>
 
 ## Dockerizing
 
