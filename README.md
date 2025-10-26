@@ -45,7 +45,7 @@ Just to give you an insight, you can pobably use this project with any other har
 - 1 Schellenberg shutter motor in my balcony door
 - 1 Schellenberg remote control
   - Which I opened up and soldered contacts to all three buttons (up/stop/down) as well as the power supply.
-  - This way I can supply power directly via the 3V GPIO output of the raspberry pi without needing batteries.
+  - This way I can supply power directly via the 3V output pin of the raspberry pi without needing batteries.
   - I'm trusting you with this [definitely professional piece of art](docs/schellenberg.png).
 - 3 Velux covers/shutters on my roof windows
 - Velux KLF 150 gateway
@@ -69,7 +69,7 @@ Just to give you an insight, you can pobably use this project with any other har
 
 ![Relay boards](docs/relay-boards.png)
 
-- Connect all **VCC** pins of the relays to a 3V GPIO pin of the Raspberry Pi.
+- Connect all **VCC** pins of the relays to a 3V pin of the Raspberry Pi.
   - I have daisy chained them together. Only the most left relay is connected to the Pi.
 - Connect all **GND** pins of the relays to a GND pin of the Raspberry Pi.
   - Again daisy chained.
