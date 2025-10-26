@@ -1,6 +1,7 @@
 import mqtt, {type IClientPublishOptions, type IClientOptions} from 'mqtt';
 import {ShutterState, ShutterInterface, isShutterWithState, isShutterWithPosition} from '../Shutter/Shutter.js';
 import {MqttDeviceDiscoveryPayload, MqttCoverConfig} from './interfaces.js';
+import type {OnDispose} from '../runtime.js';
 
 // @see https://www.home-assistant.io/integrations/mqtt
 // @see https://www.home-assistant.io/integrations/cover.mqtt/
@@ -16,9 +17,10 @@ function validateNamespacePart(str: string) {
 
 export function initMqtt(
   shutters: readonly ShutterInterface[],
+  onDispose: OnDispose,
   {url, ...mqttOpts}: { url: string } & IClientOptions,
   namespace: string = 'shutter', //must be unique if you have multiple instances of this program running
-): () => Promise<void> {
+): void {
   const shuttersById = new Map<string, ShutterInterface>(shutters.map((s) => [s.ident, s]));
 
   validateNamespacePart(namespace);
@@ -83,7 +85,7 @@ export function initMqtt(
       },
       origin: {
         name: ns0,
-        sw_version: '1.0.0',
+        sw_version: '1.1.0',
         support_url: 'https://github.com/uncaught/gpio-shutter-bridge',
       },
       payload_available: 'online',
@@ -153,8 +155,8 @@ export function initMqtt(
     publish(deviceAvailabilityTopic, 'online', {retain: true});
   });
 
-  return async () => {
+  onDispose(async () => {
     publish(deviceAvailabilityTopic, 'offline', {retain: true});
     await client.endAsync();
-  };
+  });
 }

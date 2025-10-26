@@ -2,7 +2,7 @@
   "name": "@uncaught/gpio-shutter-bridge",
   "author": "uncaught <uncaught42@gmail.com>",
   "license": "MIT",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "MQTT shutter bridge for home assistant with Velux KLF 150 support",
   "repository": {
     "type": "git",

@@ -95,21 +95,59 @@ This is for the default configuration as described in the Velux KLF 150 manual. 
 
 # Software
 
-- Create a javascript file, require my library and call it with your shutter-pin-layout:
+- Make sure you have either `raspi-gpio` or `pinctrl` (newer) installed. Check with `raspi-gpio get` or `pinctrl get`.
+  - Either one is used to set the GPIO input pins to the "pull up" mode. This is not handled in the `onoff`-library I'm using.
+  - `pinctrl` is newer, but requires permissions. So you either need to be root, or make sure you have access to all `/dev/gpio*` devices:
+    - E.g. use the `gpio` group:
+      - Check `ll /dev/gpio*` and see that every device is owned by the `gpio` group and has `g+rw` permissions.
+      - If not, use `sudo chgrp gpio /dev/gpio*` and/or `sudo chmod g+rw /dev/gpio*`.
+      - You can add yourself to the `gpio` group with `sudo usermod -a -G gpio $USER`.
+      - Verify with `pinctrl get` that you can use the tool without further permissions.
+- Go into a folder where you wish to install this project.
+- Install the library with `npm install @uncaught/gpio-shutter-bridge`
+- Create a javascript file (e.g. `run.js`), require my library and call it with your shutter-pin-layout:
 
 ```js
 import {createVeluxShutters, initRuntime, initMqtt} from '@uncaught/gpio-shutter-bridge';
 
 const {onDispose} = initRuntime();
 
-onDispose(initMqtt(createVeluxShutters([
+initMqtt(createVeluxShutters([
   {ident: 'Velux_A', up: 2, down: 3, input: 14},
   {ident: 'Velux_B', up: 4, down: 17, input: 15},
   {ident: 'Velux_C', up: 27, down: 22, input: 18},
   {ident: 'Velux_D', up: 10, down: 9, input: 23},
   {ident: 'Velux_E', up: 11, down: 8, input: 24}, //same row!
-], onDispose), {url: 'mqtt://your-mqtt-or-home-assistant'}));
+], onDispose), onDispose, {url: 'mqtt://your-mqtt-or-home-assistant'});
 ```
 
 - The ident should match `/[a-zA-Z][a-zA-Z0-9_-]*/`.
 - See [my personal example](./example.ts) for a few more details.
+
+## Dockerizing
+
+I tried to dockerize this project, but I was not able to get it to work with only specific mapped devices. The `pinctrl` kept saying "No GPIO chips found". I've only managed to get it working with the `--privileged` flag, which for me, kind of defeats the purpose of running this inside docker.
+
+If you find a way to get it working, please let me know, I'll add it as an example.
+
+<details>
+<summary>My attempts</summary>
+
+I tried based off of this:
+
+```Dockerfile
+FROM node:25.0.0-trixie-slim
+
+RUN apt update && apt install -y git build-essential cmake \
+    && git clone https://github.com/raspberrypi/utils.git \
+    && cd utils/pinctrl \
+    && cmake . \
+    && make \
+    && make install
+
+ENTRYPOINT ["bash"]
+```
+
+Building with `docker build -t gpio .` and running with `docker run --rm -it --device /dev/gpiochip0 --device /dev/gpiochip1 --device /dev/gpiochip2 --device /dev/gpiomem --cap-add SYS_RAWIO gpio`
+
+</details>
