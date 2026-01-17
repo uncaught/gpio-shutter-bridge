@@ -12,11 +12,15 @@ export interface VeluxConfig {
   input: number;
 }
 
+export interface VeluxOptions {
+  persistenceFile?: string;
+}
+
 export function createVeluxShutters(
   shutters: readonly VeluxConfig[],
   onDispose: OnDispose,
+  {persistenceFile = '/tmp/velux-shutter-state.json'}: VeluxOptions = {},
 ): readonly VeluxShutter[] {
-  const persistenceFile = '/tmp/velux-shutter-state.json';
   let storage: Partial<Record<string, Persistence>> = {};
   if (existsSync(persistenceFile)) {
     const file = readFileSync(persistenceFile).toString();
