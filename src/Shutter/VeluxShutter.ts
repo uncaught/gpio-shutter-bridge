@@ -113,19 +113,21 @@ export class VeluxShutter implements ShutterInterfaceWithState, ShutterInterface
     return 0;
   }
 
-  private getAverageActionDuration(action: ShutterAction): number {
+  private getEstimatedActionDuration(action: ShutterAction): number {
+    const signalDuration = this.getAverageDuration('topSignalDurations');
+    let avg = 0;
     if (action === 'opening') {
-      return this.getAverageDuration('topFullOpenDurations');
+      avg =  this.getAverageDuration('topFullOpenDurations');
     }
     if (action === 'closing') {
-      return this.getAverageDuration('topFullCloseDurations');
+      avg =  this.getAverageDuration('topFullCloseDurations');
     }
-    return 0;
+    return avg > 0 ? Math.max(0, avg - signalDuration) : 0;
   }
 
   private getPositionDelta(prevState: ShutterState, duration: number): number {
     if (isShutterAction(prevState) && duration > 0) {
-      const avg = this.getAverageActionDuration(prevState);
+      const avg = this.getEstimatedActionDuration(prevState);
       if (avg > 0) {
         return minMaxPercentage(Math.round((duration / avg) * 100));
       }
@@ -235,10 +237,10 @@ export class VeluxShutter implements ShutterInterfaceWithState, ShutterInterface
     } else if (position > 0 && position < 100) {
       let timeout = 0;
       if (position > this.position) {
-        timeout = (this.getAverageActionDuration('opening') * (position - this.position)) / 100;
+        timeout = (this.getEstimatedActionDuration('opening') * (position - this.position)) / 100;
         this.open();
       } else {
-        timeout = (this.getAverageActionDuration('closing') * (this.position - position)) / 100;
+        timeout = (this.getEstimatedActionDuration('closing') * (this.position - position)) / 100;
         this.close();
       }
       if (timeout) {
