@@ -10,9 +10,13 @@ import {
 } from './Shutter.js';
 import {press} from '../Gpio.js';
 
-export interface Persistence {
-  lastFullCloseDurations?: number[];
-  lastFullOpenDurations?: number[];
+interface Durations {
+  topFullCloseDurations?: number[];
+  topFullOpenDurations?: number[];
+  topSignalDurations?: number[];
+}
+
+export interface Persistence extends Durations {
   position?: number;
   state?: ShutterPosition;
 }
@@ -22,7 +26,7 @@ interface Store {
   set: (value: Partial<Persistence>) => void;
 }
 
-const lastDurationsToKeep = 10;
+const durationsToKeep = 20;
 
 function minMaxPercentage(num: number): number {
   return Math.min(Math.max(num, 0), 100);
@@ -30,6 +34,7 @@ function minMaxPercentage(num: number): number {
 
 export class VeluxShutter implements ShutterInterfaceWithState, ShutterInterfaceWithPosition {
   private lastActionStartTime: number = 0;
+  private lastStoppingStartTime: number = 0;
   private prevPositionState: ShutterPosition = 'unknown';
   private positioningTimeout: NodeJS.Timeout | null = null;
   private position: number = 42; //unknown initially
@@ -47,7 +52,7 @@ export class VeluxShutter implements ShutterInterfaceWithState, ShutterInterface
     private readonly store: Store,
   ) {
     const persistence = this.store.get();
-    if (typeof persistence.position === 'number' && (persistence.position <= 100 && persistence.position >= 0)) {
+    if (typeof persistence.position === 'number' && persistence.position <= 100 && persistence.position >= 0) {
       this.position = +persistence.position; //"+" makes sure we have integers only
     }
     if (persistence.state && isShutterPosition(persistence.state)) {
@@ -71,7 +76,7 @@ export class VeluxShutter implements ShutterInterfaceWithState, ShutterInterface
   }
 
   private notifyStateChange(): void {
-    this.stateListeners.forEach(listener => {
+    this.stateListeners.forEach((listener) => {
       try {
         listener(this.state);
       } catch (err) {
@@ -81,7 +86,7 @@ export class VeluxShutter implements ShutterInterfaceWithState, ShutterInterface
   }
 
   private notifyPositionChange(): void {
-    this.positionListeners.forEach(listener => {
+    this.positionListeners.forEach((listener) => {
       try {
         listener(this.position);
       } catch (err) {
@@ -90,36 +95,39 @@ export class VeluxShutter implements ShutterInterfaceWithState, ShutterInterface
     });
   }
 
-  private storeDuration(key: 'lastFullCloseDurations' | 'lastFullOpenDurations', duration: number): void {
+  private storeDuration(key: keyof Durations, duration: number): void {
     if (duration > 0) {
-      let array = this.store.get()[key] ?? [];
-      array.unshift(duration);
-      array = array.slice(0, lastDurationsToKeep);
-      this.store.set({[key]: array});
+      //Keep the N longest durations:
+      this.store.set({
+        [key]: [...(this.store.get()[key] ?? []), duration].sort((a, b) => b - a).slice(0, durationsToKeep),
+      });
     }
   }
 
-  private getAverageDuration(action: ShutterAction): number {
-    let lastDurations: number[] = [];
+  private getAverageDuration(key: keyof Durations): number {
+    const storedDurations = this.store.get()[key] ?? [];
+    if (storedDurations.length) {
+      const sum = storedDurations.reduce((a, b) => a + b, 0);
+      return sum / storedDurations.length;
+    }
+    return 0;
+  }
+
+  private getAverageActionDuration(action: ShutterAction): number {
     if (action === 'opening') {
-      lastDurations = this.store.get().lastFullOpenDurations ?? [];
+      return this.getAverageDuration('topFullOpenDurations');
     }
     if (action === 'closing') {
-      lastDurations = this.store.get().lastFullCloseDurations ?? [];
+      return this.getAverageDuration('topFullCloseDurations');
     }
-    if (lastDurations.length) {
-      const sum = lastDurations.reduce((a, b) => a + b, 0);
-      return sum / lastDurations.length;
-    }
-
     return 0;
   }
 
   private getPositionDelta(prevState: ShutterState, duration: number): number {
     if (isShutterAction(prevState) && duration > 0) {
-      const avg = this.getAverageDuration(prevState);
+      const avg = this.getAverageActionDuration(prevState);
       if (avg > 0) {
-        return minMaxPercentage(Math.round(duration / avg * 100));
+        return minMaxPercentage(Math.round((duration / avg) * 100));
       }
     }
 
@@ -133,6 +141,14 @@ export class VeluxShutter implements ShutterInterfaceWithState, ShutterInterface
 
     if (state === 'stopping') {
       this.preStopState = this.prevState;
+      this.lastStoppingStartTime = Date.now();
+    } else if (state === 'in-between') {
+      //Measure the time it takes between a manual "stop" and the following stopped signal.
+      // This gives us an estimate on how long the KLF 150 takes to send it for any operation.
+      const stopDuration = this.lastStoppingStartTime ? Date.now() - this.lastStoppingStartTime : 0;
+      this.storeDuration('topSignalDurations', stopDuration);
+    } else {
+      this.lastStoppingStartTime = 0;
     }
 
     if (state === 'opening' || state === 'closing') {
@@ -145,15 +161,26 @@ export class VeluxShutter implements ShutterInterfaceWithState, ShutterInterface
     }
 
     if (isShutterPosition(state)) {
-      const duration = this.lastActionStartTime ? (Date.now() - this.lastActionStartTime) : 0;
+      const signalDuration = this.getAverageDuration('topSignalDurations');
+      const measuredDuration = this.lastActionStartTime ? Date.now() - this.lastActionStartTime : 0;
+      const positionDuration = measuredDuration > 0 ? Math.max(0, measuredDuration - signalDuration) : 0;
 
       if (state === 'closed') {
-        this.position = 0;
+        const delta = this.getPositionDelta(this.prevState, positionDuration);
+        if (delta) {
+          this.position = minMaxPercentage(this.position - delta);
+        } else {
+          this.position = 0;
+        }
       } else if (state === 'open') {
-        this.position = 100;
+        const delta = this.getPositionDelta(this.prevState, positionDuration);
+        if (delta) {
+          this.position = minMaxPercentage(this.position + delta);
+        } else {
+          this.position = 100;
+        }
       } else if (state === 'in-between') {
-        const prevPosition = this.position;
-        const delta = this.getPositionDelta(this.preStopState, duration);
+        const delta = this.getPositionDelta(this.preStopState, positionDuration);
         if (this.preStopState === 'opening') {
           this.position = minMaxPercentage(this.position + delta);
         } else if (this.preStopState === 'closing') {
@@ -166,10 +193,10 @@ export class VeluxShutter implements ShutterInterfaceWithState, ShutterInterface
       let prevPositionState = this.prevPositionState;
       this.prevPositionState = state;
       if (prevPositionState === 'open' && state === 'closed') {
-        this.storeDuration('lastFullCloseDurations', duration);
+        this.storeDuration('topFullCloseDurations', measuredDuration);
       }
       if (prevPositionState === 'closed' && state === 'open') {
-        this.storeDuration('lastFullOpenDurations', duration);
+        this.storeDuration('topFullOpenDurations', measuredDuration);
       }
     }
   }
@@ -208,10 +235,10 @@ export class VeluxShutter implements ShutterInterfaceWithState, ShutterInterface
     } else if (position > 0 && position < 100) {
       let timeout = 0;
       if (position > this.position) {
-        timeout = this.getAverageDuration('opening') * (position - this.position) / 100;
+        timeout = (this.getAverageActionDuration('opening') * (position - this.position)) / 100;
         this.open();
       } else {
-        timeout = this.getAverageDuration('closing') * (this.position - position) / 100;
+        timeout = (this.getAverageActionDuration('closing') * (this.position - position)) / 100;
         this.close();
       }
       if (timeout) {
