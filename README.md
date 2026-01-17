@@ -74,7 +74,7 @@ Just to give you an insight, you can pobably use this project with any other har
 - Connect all **GND** pins of the relays to a GND pin of the Raspberry Pi.
   - Again daisy chained.
 - Connect each **IN** pin of the relays to one GPIO pin of the Raspberry Pi.
-  - If you use all 10 relays, for all 5 shutters, I'm [suggesting](./example.ts) pins [2, 3, 4, 17, 27, 22, 10, 9, 11, 8](https://pinout.xyz/).
+  - If you use all 10 relays, for all 5 shutters, I'm [suggesting](./example.ts) [GPIO 2, 3, 4, 17, 27, 22, 10, 9, 11, 8](https://pinout.xyz/).
 
 ## Wiring the Velux KLF 150 to the rest
 
@@ -86,7 +86,7 @@ This is for the default configuration as described in the Velux KLF 150 manual. 
 
 - Connect all 5 bottom pins of the output (A-E) together and to GND.
 - Connect all 5 top pins of the output (A-E) to any GPIO pin.
-  - I'm [suggesting](./example.ts) pins [14, 15, 18, 23, 24](https://pinout.xyz/).
+  - I'm [suggesting](./example.ts) [GPIO 14, 15, 18, 23, 24](https://pinout.xyz/).
 
 ### Inputs
 
