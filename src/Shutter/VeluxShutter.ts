@@ -11,9 +11,9 @@ import {
 import {press} from '../Gpio.js';
 
 interface Durations {
+  bottomSignalDurations?: number[];
   topFullCloseDurations?: number[];
   topFullOpenDurations?: number[];
-  topSignalDurations?: number[];
 }
 
 export interface Persistence extends Durations {
@@ -27,6 +27,14 @@ interface Store {
 }
 
 const durationsToKeep = 20;
+const getBottomDurations = (d: number[]) => d.sort((a, b) => a - b).slice(0, durationsToKeep);
+const getLastDurations = (d: number[]) => d.slice(-durationsToKeep);
+const getTopDurations = (d: number[]) => d.sort((a, b) => b - a).slice(0, durationsToKeep);
+const durationHandlers: Record<keyof Durations, (d: number[]) => number[]> = {
+  bottomSignalDurations: getBottomDurations,
+  topFullCloseDurations: getTopDurations,
+  topFullOpenDurations: getTopDurations,
+};
 
 function minMaxPercentage(num: number): number {
   return Math.min(Math.max(num, 0), 100);
@@ -97,10 +105,7 @@ export class VeluxShutter implements ShutterInterfaceWithState, ShutterInterface
 
   private storeDuration(key: keyof Durations, duration: number): void {
     if (duration > 0) {
-      //Keep the N longest durations:
-      this.store.set({
-        [key]: [...(this.store.get()[key] ?? []), duration].sort((a, b) => b - a).slice(0, durationsToKeep),
-      });
+      this.store.set({[key]: durationHandlers[key]([...(this.store.get()[key] ?? []), duration])});
     }
   }
 
@@ -114,13 +119,13 @@ export class VeluxShutter implements ShutterInterfaceWithState, ShutterInterface
   }
 
   private getEstimatedActionDuration(action: ShutterAction): number {
-    const signalDuration = this.getAverageDuration('topSignalDurations');
+    const signalDuration = this.getAverageDuration('bottomSignalDurations');
     let avg = 0;
     if (action === 'opening') {
-      avg =  this.getAverageDuration('topFullOpenDurations');
+      avg = this.getAverageDuration('topFullOpenDurations');
     }
     if (action === 'closing') {
-      avg =  this.getAverageDuration('topFullCloseDurations');
+      avg = this.getAverageDuration('topFullCloseDurations');
     }
     return avg > 0 ? Math.max(0, avg - signalDuration) : 0;
   }
@@ -148,7 +153,7 @@ export class VeluxShutter implements ShutterInterfaceWithState, ShutterInterface
       //Measure the time it takes between a manual "stop" and the following stopped signal.
       // This gives us an estimate on how long the KLF 150 takes to send it for any operation.
       const stopDuration = this.lastStoppingStartTime ? Date.now() - this.lastStoppingStartTime : 0;
-      this.storeDuration('topSignalDurations', stopDuration);
+      this.storeDuration('bottomSignalDurations', stopDuration);
     } else {
       this.lastStoppingStartTime = 0;
     }
@@ -163,7 +168,7 @@ export class VeluxShutter implements ShutterInterfaceWithState, ShutterInterface
     }
 
     if (isShutterPosition(state)) {
-      const signalDuration = this.getAverageDuration('topSignalDurations');
+      const signalDuration = this.getAverageDuration('bottomSignalDurations');
       const measuredDuration = this.lastActionStartTime ? Date.now() - this.lastActionStartTime : 0;
       const positionDuration = measuredDuration > 0 ? Math.max(0, measuredDuration - signalDuration) : 0;
 
