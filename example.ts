@@ -35,4 +35,7 @@ const shutters = [
   createThreeButtonShutter('Balkon', 10, 9, 11, onDispose),
 ];
 
-initMqtt(shutters, onDispose, {url: 'mqtts://mosquitto.local.correnz.net', rejectUnauthorized: false});
+initMqtt(shutters, onDispose, {
+  url: 'mqtts://mosquitto.local.correnz.net',
+  rejectUnauthorized: false,
+});

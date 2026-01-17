@@ -9,8 +9,7 @@ export class ThreeButtonShutter implements ShutterInterface {
     private readonly openButton: Gpio,
     private readonly stopButton: Gpio,
     private readonly closeButton: Gpio,
-  ) {
-  }
+  ) {}
 
   open(): void {
     press(this.openButton);
@@ -32,10 +31,5 @@ export function createThreeButtonShutter(
   down: number,
   onDispose: OnDispose,
 ): ThreeButtonShutter {
-  return new ThreeButtonShutter(
-    ident,
-    mkOutput(up, onDispose),
-    mkOutput(stop, onDispose),
-    mkOutput(down, onDispose),
-  );
+  return new ThreeButtonShutter(ident, mkOutput(up, onDispose), mkOutput(stop, onDispose), mkOutput(down, onDispose));
 }

@@ -1,6 +1,9 @@
 export type OnDispose = (disposable: () => void | Promise<void>) => () => void;
 
-export function initRuntime(): { exit: (err?: Error | unknown) => Promise<void>; onDispose: OnDispose } {
+export function initRuntime(): {
+  exit: (err?: Error | unknown) => Promise<void>;
+  onDispose: OnDispose;
+} {
   const disposables = new Set<() => void | Promise<void>>();
 
   const onDispose: OnDispose = (cb) => {

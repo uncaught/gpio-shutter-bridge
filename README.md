@@ -53,7 +53,7 @@ Just to give you an insight, you can pobably use this project with any other har
   - Before buying this, I also tried soldering contacts to the Velux remotes (model 3UR B01 WW), but I broke the first...
 - 9 relay modules
   - If you use a Raspberry PI, you need relays that work with 3V and it helps if they already have a pull-up resistor because the GPIO pins can have a floating voltage when the PI boots and they are not yet assigned as outputs, triggering the relay when it shouldn't.
-  - I bought [this 10 pack on amazon](https://www.amazon.de/dp/B0F53QDMXG) 
+  - I bought [this 10 pack on amazon](https://www.amazon.de/dp/B0F53QDMXG)
   - You will need 2 relays per Velux shutter, so for my three windows I needed 6 relays.
   - Additionally I needed 3 relays for my Schellenberg remote control.
   - If you find a board with multiple 3V relays on it, go ahead. I just screwed mine together on a wooden board.
@@ -91,7 +91,7 @@ This is for the default configuration as described in the Velux KLF 150 manual. 
 ### Inputs
 
 - The bottom line of all input pins are for GND. However, since the cabling comes in pairs anyway and you need to connect them each to one of the relays, I just used all the existing cables.
-- So connect all 10 inputs to the 10 relays, the top one to **NO** (normally open) and the bottom one to **COM** (common). 
+- So connect all 10 inputs to the 10 relays, the top one to **NO** (normally open) and the bottom one to **COM** (common).
 
 # Software
 
@@ -100,7 +100,7 @@ This is for the default configuration as described in the Velux KLF 150 manual. 
 - Make sure you have either `raspi-gpio` or `pinctrl` (newer) available.
   - Check with `raspi-gpio get` or `pinctrl get`.
   - Either one is used to set the GPIO input pins to the "pull up" mode. This is not handled in the `onoff`-library I'm using.
-  - `pinctrl` is newer, but requires permissions. 
+  - `pinctrl` is newer, but requires permissions.
     - So you either need to be root, or make sure you have access to all `/dev/gpio*` devices.
     - E.g. use the `gpio` group:
       - Check `ll /dev/gpio*` and see that every device is owned by the `gpio` group and has `g+rw` permissions.
@@ -116,13 +116,20 @@ import {createVeluxShutters, initRuntime, initMqtt} from '@uncaught/gpio-shutter
 
 const {onDispose} = initRuntime();
 
-initMqtt(createVeluxShutters([
-  {ident: 'Velux_A', up: 2, down: 3, input: 14},
-  {ident: 'Velux_B', up: 4, down: 17, input: 15},
-  {ident: 'Velux_C', up: 27, down: 22, input: 18},
-  {ident: 'Velux_D', up: 10, down: 9, input: 23},
-  {ident: 'Velux_E', up: 11, down: 8, input: 24}, //same row!
-], onDispose), onDispose, {url: 'mqtt://your-mqtt-or-home-assistant'});
+initMqtt(
+  createVeluxShutters(
+    [
+      {ident: 'Velux_A', up: 2, down: 3, input: 14},
+      {ident: 'Velux_B', up: 4, down: 17, input: 15},
+      {ident: 'Velux_C', up: 27, down: 22, input: 18},
+      {ident: 'Velux_D', up: 10, down: 9, input: 23},
+      {ident: 'Velux_E', up: 11, down: 8, input: 24}, //same row!
+    ],
+    onDispose,
+  ),
+  onDispose,
+  {url: 'mqtt://your-mqtt-or-home-assistant'},
+);
 ```
 
 - The ident should match `/[a-zA-Z][a-zA-Z0-9_-]*/`.

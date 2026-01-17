@@ -3,13 +3,13 @@ import type {OnDispose} from './runtime.js';
 import {execSync} from 'child_process';
 
 async function sleep(wait: number) {
-  await new Promise(resolve => setTimeout(resolve, wait));
+  await new Promise((resolve) => setTimeout(resolve, wait));
 }
 
 export async function press(...outputs: readonly Gpio[]) {
-  outputs.forEach(output => output.writeSync(1));
+  outputs.forEach((output) => output.writeSync(1));
   await sleep(200);
-  outputs.forEach(output => output.writeSync(0));
+  outputs.forEach((output) => output.writeSync(0));
 }
 
 export function mkOutput(pin: number, onDispose: OnDispose): Gpio {

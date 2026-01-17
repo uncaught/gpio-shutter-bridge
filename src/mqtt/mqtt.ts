@@ -18,7 +18,7 @@ function validateNamespacePart(str: string) {
 export function initMqtt(
   shutters: readonly ShutterInterface[],
   onDispose: OnDispose,
-  {url, ...mqttOpts}: { url: string } & IClientOptions,
+  {url, ...mqttOpts}: {url: string} & IClientOptions,
   namespace: string = 'shutter', //must be unique if you have multiple instances of this program running
 ): void {
   const shuttersById = new Map<string, ShutterInterface>(shutters.map((s) => [s.ident, s]));
@@ -115,13 +115,17 @@ export function initMqtt(
       if (isShutterWithState(shutter)) {
         const publishState = (state: ShutterState) => {
           if (state !== 'stopping' && state !== 'unknown') {
-            publish(`${shutterNs}/state`, {
-              'closed': 'closed',
-              'closing': 'closing',
-              'in-between': 'stopped',
-              'open': 'open',
-              'opening': 'opening',
-            }[state], {retain: true});
+            publish(
+              `${shutterNs}/state`,
+              {
+                closed: 'closed',
+                closing: 'closing',
+                'in-between': 'stopped',
+                open: 'open',
+                opening: 'opening',
+              }[state],
+              {retain: true},
+            );
           }
         };
         publishState(shutter.getState());

@@ -1,11 +1,11 @@
 export const shutterPositions = ['open', 'closed', 'in-between', 'unknown'] as const;
-export type ShutterPosition = typeof shutterPositions[number];
+export type ShutterPosition = (typeof shutterPositions)[number];
 
 export const shutterActions = ['opening', 'closing', 'stopping'] as const;
-export type ShutterAction = typeof shutterActions[number];
+export type ShutterAction = (typeof shutterActions)[number];
 
 export const shutterStates = [...shutterPositions, ...shutterActions] as const;
-export type ShutterState = typeof shutterStates[number];
+export type ShutterState = (typeof shutterStates)[number];
 
 export function isShutterPosition(state: unknown): state is ShutterPosition {
   return !!state && shutterPositions.includes(state as ShutterPosition);

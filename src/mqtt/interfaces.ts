@@ -148,7 +148,17 @@ export interface MqttCoverConfig {
 
   // Device class
   /** Type of cover (awning, blind, curtain, damper, door, garage, gate, shade, shutter, window) */
-  device_class?: 'awning' | 'blind' | 'curtain' | 'damper' | 'door' | 'garage' | 'gate' | 'shade' | 'shutter' | 'window';
+  device_class?:
+    | 'awning'
+    | 'blind'
+    | 'curtain'
+    | 'damper'
+    | 'door'
+    | 'garage'
+    | 'gate'
+    | 'shade'
+    | 'shutter'
+    | 'window';
 
   // Behavior options
   /** Flag that defines if cover works in optimistic mode (default: true if no state_topic) */
