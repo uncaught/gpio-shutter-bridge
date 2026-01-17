@@ -176,6 +176,7 @@ export class VeluxShutter implements ShutterInterfaceWithState, ShutterInterface
         const delta = this.getPositionDelta(this.prevState, positionDuration);
         if (delta) {
           this.position = minMaxPercentage(this.position - delta);
+          this.position = this.position < 3 ? 0 : this.position;
         } else {
           this.position = 0;
         }
@@ -183,6 +184,7 @@ export class VeluxShutter implements ShutterInterfaceWithState, ShutterInterface
         const delta = this.getPositionDelta(this.prevState, positionDuration);
         if (delta) {
           this.position = minMaxPercentage(this.position + delta);
+          this.position = this.position > 97 ? 100 : this.position;
         } else {
           this.position = 100;
         }
